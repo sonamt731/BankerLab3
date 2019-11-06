@@ -457,7 +457,7 @@ public class banker {
 				
 				//terminate
 				else if(activity.equals("terminate")) {
-					System.out.println(curr.taskNum +" "+ curr.activity.peek());
+					//System.out.println(curr.taskNum +" "+ curr.activity.peek());
 					curr.activity.poll();
 					curr.terminated = true;
 					toRemove.add(curr.taskNum);
