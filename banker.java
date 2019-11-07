@@ -5,7 +5,7 @@
  * This lab does resource allocation using both an optimistic resource manager and the banker's algorithm of Dijkstra. 
  * 
  */
-package banker;
+//package banker;
 
 import java.io.File;
 import java.io.FileNotFoundException;
