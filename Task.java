@@ -10,9 +10,7 @@ public class Task {
 	int[] claim; 
 	boolean aborted = false;
 	int valWait = 1;
-	int[] numRequested; //used for the bankers algorithm to store the total amount 
-	//basically if an entry is equal to 0 then it is either had prev status not as request or it is first round
-	//if the number is not 0 that means the prev was equal to request -- constantly make sure that if the number != 0 it is less than claim
+
 	String error = "";
 	
 	//used for bankers algorithm to store the number of each resource that the task needs - helps to determine whether state is safe or unsafe
@@ -37,7 +35,6 @@ public class Task {
 		this.taskNum = taskNum;
 		setHas(numResources);
 		claim = new int[numResources]; //list to store the claims of each resource
-		numRequested = new int[numResources];
 	}
 	
 	//this method initializes the quantity that the process has of each resource

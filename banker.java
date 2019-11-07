@@ -1,3 +1,10 @@
+/**
+ * Banker Lab 
+ * Due: November 7th
+ * @author sonamtailor
+ * This lab does resource allocation using both an optimistic resource manager and the banker's algorithm of Dijkstra. 
+ * 
+ */
 package banker;
 
 import java.io.File;
@@ -22,6 +29,7 @@ public class banker {
 		
 		int numTasks = input.nextInt();
 		int numResources = input.nextInt();
+		//two versions bc they are overwritten when passed by reference to the functions
 		HashMap<Integer, Integer> resourcesOpt = new HashMap<>(numResources);
 		HashMap<Integer, Integer> resourcesBank = new HashMap<>(numResources);
 		
@@ -85,8 +93,9 @@ public class banker {
 			}
 			
 		}
-		
+		//method call
 		optimisticManager(numTasks, resourcesOpt, optimisticTasks);
+		//outputs the FIFO - Optimistic Banker
 		System.out.println("\t\tFIFO");
 		int count = 0;
 		int total = 0;
@@ -107,9 +116,11 @@ public class banker {
 		
 		float totalperc = 100*((float)totalWait/(float)total);
 		int roundtot = Math.round(totalperc);
-		System.out.printf("\ttotal\t\t%5d   %5d   %5d%%\n",total, totalWait, roundtot);
+		System.out.printf("\ttotal\t\t%5d   %5d   %5d%%\n\n",total, totalWait, roundtot);
 		
+		//method call
 		bankManager(numTasks, resourcesBank, bankersTasks);
+		//outputs the Bankers output - Dijkstra
 		System.out.println("\t\tBANKER'S");
 		count = 0;
 		total = 0;
@@ -138,7 +149,18 @@ public class banker {
 		System.out.printf("\ttotal\t\t%5d   %5d   %5d%%\n",total, totalWait, roundtot);
 		
 	}
-	
+	/*
+	 * Optimistic Manager Method 
+	 * This algorithm satisfies the request if possible, if not it makes the task wait - essentially when we have pending request we use a FIFO manner to run
+	 * If we have a deadlock (in the case that all the resources are deadlocked, my code aborts the lowest numbered deadlocked task after releasing its resources.
+	 * This process of aborting is continued until we are able to satisfy the requests of one of the resources
+	 * 
+	 * @param - numTasks - the number of tasks we have 
+	 * @param HashMap<Integer,Integer> resources - stores the resource number as the key and the number of resources we have respectively (as the value). 
+	 * @param HashMap<Integer, Task> optimisticTasks - stores the task number as the key and the actual Task object as the value 
+	 * 
+	 * The function is void and instead the changes are updates to the optimisticTasks hashmap which has been passed by reference.
+	 */
 	public static void optimisticManager(int numTasks, HashMap<Integer, Integer> resources, HashMap<Integer, Task> optimisticTasks) {
 	//	int cycle = 0;
 	//	Queue<Task> done = new LinkedList<>();
@@ -157,7 +179,7 @@ public class banker {
 			numTasks = blocked.size()+run.size();
 			
 			if(!blocked.isEmpty()){
-				if (blocked.size()==numTasks && blocked.size()!=1) { //case that all of our tasks are blocked - deadlock case - we abort the lowest numbered deadlocked task after releasing all of its resources 
+				if (blocked.size()==numTasks && blocked.size()!=1) { //case that all of our tasks are blocked - DEADLOCK case - we abort the lowest numbered deadlocked task after releasing all of its resources 
 					//System.out.println(numTasks);
 					for(int i: blocked) {
 						wait.add(i); //this will be the array list to sort
@@ -174,8 +196,9 @@ public class banker {
 						resources.put(res,newTot);
 					}
 					optimisticTasks.get(toAbort).aborted = true;
-					blocked.remove(toAbort);
+					blocked.remove(toAbort); //remove the aborted Task from the blocked queue it was originally stored in 
 				}
+				//case that we do not have a deadlock
 				else {
 					for(int i: blocked) {
 						Task curr = optimisticTasks.get(i);
@@ -185,7 +208,6 @@ public class banker {
 						if (state.equals("request")) {
 							if(numReq<=resources.get(whichResource)) { //case that we have enough
 								//update quantity that task has in the hashmap
-								//System.out.print("WE IN IT  for " + curr.taskNum);
 								int newNumofRforTask = curr.taskResource.get(whichResource)+numReq;
 								curr.taskResource.put(whichResource,newNumofRforTask);
 								curr.activity.poll();
@@ -205,7 +227,7 @@ public class banker {
 						curr.totalTime++;
 					}
 				}
-				
+				//remove the tasks that we aborted or are no longer blocked 
 				for(int i: toRemove) {
 					blocked.remove(i);			
 				}
@@ -234,6 +256,7 @@ public class banker {
 					int resourceRel = curr.releaseROrder.peek();
 					int numRel = curr.releases.peek();
 
+					//resources to be released - will iterate through after this cycle bc they become available after 
 					releasedres.put(resourceRel, resources.get(resourceRel)+numRel);
 					curr.releaseROrder.poll();
 					curr.releases.poll();
@@ -269,7 +292,7 @@ public class banker {
 					}
 					else { //case that we do not have enough
 						toRemove.add(curr.taskNum);
-						blocked.add(curr.taskNum);
+						blocked.add(curr.taskNum); //add task to the blocked list for the next cycle 
 						curr.waitTime++;
 						//System.out.println("task: "+curr.taskNum+ " in main but wanted "+ numReq +" of "+ whichResource +" but could not" );
 					}
@@ -306,6 +329,8 @@ public class banker {
 			for(int i: toRemove) {
 				run.remove(i);
 			}
+			
+			//reset 
 			toAdd.clear();
 			toRemove.clear();
 			releasedres.clear();
@@ -314,7 +339,18 @@ public class banker {
 		
 		//return done;
 	}
-	
+	/*
+	 * Bankers Manager Method 
+	 * This algorithm satisfies the request if the number of resourses requested does not exceed the claim
+	 * if not it makes the task wait - essentially when we have pending request 
+	 * We abort tasks if the resources requested exceeds the initial claim made by the task
+	 * 
+	 * @param - numTasks - the number of tasks we have 
+	 * @param HashMap<Integer,Integer> resources - stores the resource number as the key and the number of resources we have respectively (as the value). 
+	 * @param HashMap<Integer, Task> bankersTasks - stores the task number as the key and the actual Task object as the value 
+	 * 
+	 * The function is void and instead the changes are updates to the bankersTasks hashmap which has been passed by reference.
+	 */
 	public static void bankManager(int numTasks, HashMap<Integer, Integer> resources, HashMap<Integer, Task> bankersTasks) {
 		Queue<Integer> toRemove = new LinkedList();
 		ArrayList<Integer> wait = new ArrayList<>();
@@ -348,6 +384,7 @@ public class banker {
 					//	System.out.print("\n\nTask "+curr.taskNum+" requests "+ numReq + " and we have "+ resources.get(whichResource));
 						if (state.equals("request")) {
 							
+							//determines whether it is safe request
 							boolean safe = true;
 							for(int p: resources.keySet()) {
 								if(resources.get(p) < curr.needs.get(p)) {
@@ -366,6 +403,7 @@ public class banker {
 									releasedres.put(whichResource, curr.taskResource.get(whichResource));
 									toRemove.add(curr.taskNum);
 								}
+								//case that we can meet the request
 								else {	
 									curr.taskResource.put(whichResource,newNumofRforTask);
 									curr.activity.poll();
@@ -376,7 +414,7 @@ public class banker {
 									resources.put(whichResource, newNumofR);
 									toRemove.add(i);//remove from blocked
 									toAdd.add(i); //to add to run
-									curr.numRequested[whichResource-1]+=numReq;
+									//curr.numRequested[whichResource-1]+=numReq;
 									int newNeed = curr.claim[whichResource -1]-newNumofRforTask;
 									curr.needs.put(whichResource, newNeed);
 								}
@@ -398,6 +436,7 @@ public class banker {
 					int newVal = oldVal + releasedres.get(i);
 					resources.put(i, newVal);
 				}
+				
 				toRemove.clear(); //reset
 				wait.clear();
 			}
@@ -415,6 +454,7 @@ public class banker {
 							resourcenum = j+1;
 						}
 					}
+					//case that intialized claim val exceeds the number of resources we have
 					if(abort) {
 						curr.aborted = true;
 						curr.error = "Banker aborts task " + curr.taskNum + " before run begins: " + " \n\tclaim for resource " + resourcenum + " (" + curr.claim[resourcenum-1] + ") exceeds number of units present (" + resources.get(resourcenum) + ")\n";  
@@ -471,10 +511,11 @@ public class banker {
 					//debug
 					//System.out.println("Task Num "+ curr.taskNum + " with total time as "+ curr.totalTime);
 					
+					//determines whether it is safe 
 					boolean safe = true;
 					for(int p: resources.keySet()) {
-						if(resources.get(p) < curr.needs.get(p)) {
-							safe = false;
+						if(resources.get(p) < curr.needs.get(p)) { //not safe - not sufficient resources 
+							safe = false; 
 						}
 					}
 
@@ -499,7 +540,7 @@ public class banker {
 							resources.put(whichResource, newNumofR);
 							int newNeed = curr.claim[whichResource-1]-newNumofRforTask;
 							curr.needs.put(whichResource, newNeed);
-							curr.numRequested[whichResource-1]+=numReq;
+							//curr.numRequested[whichResource-1]+=numReq;
 						}
 					}
 					else { //case that it is unsafe
@@ -539,7 +580,7 @@ public class banker {
 			for(int i: toRemove) {
 				run.remove(i);
 			}
-			
+			//reset
 			toAdd.clear();
 			toRemove.clear();
 			releasedres.clear();
